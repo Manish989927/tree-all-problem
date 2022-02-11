@@ -1,0 +1,174 @@
+#include<iostream>>
+#include<cstdlib>
+using namespace std;
+#define max_tree_ht 100
+
+struct minheapnode
+{
+    char data;
+    unsigned freq;
+    struct minheapnode *left, *right;
+};
+struct minheap
+{
+    unsigned size;
+    unsigned capacity;
+    struct minheapnode** array;
+};
+
+struct minheapnode* newnode(char data, unsigned freq)
+{
+    struct minheapnode* temp = (struct minheapnode*)malloc(sizeof(struct minheapnode));
+    temp->left = temp->right = NULL;
+    temp->data = data;
+    temp->freq = freq;
+    return temp;
+};
+
+struct minheap* createminheap(unsigned capacity)
+{
+    struct minheap* minheap = (struct minheap*)malloc(sizeof(struct minheap));
+    minheap->size =0;
+    minheap->capacity = capacity;
+    minheap->array = (struct minheapnode**)malloc(minheap->capacity*sizeof(struct minheapnode*));
+    return minheap;
+};
+
+void swapminheapnode (struct minheapnode** a, struct minheapnode** b)
+{
+    struct minheapnode* t = *a;
+    *a = *b;
+    *b = t;
+}
+
+void minheapify(struct minheap* minheap, int idx)
+{
+
+    int smallest = idx;
+    int left = 2*idx +1;
+    int right = 2*idx +2;
+
+    if(left < minheap->size && minheap->array[left]->freq < minheap->array[smallest]->freq)
+        smallest = left;
+    if(right < minheap->size && minheap->array[right]->freq < minheap->array[smallest]->freq)
+        smallest = right;
+    if(smallest != idx)
+    {
+        swapminheapnode(&minheap->array[smallest], &minheap->array[idx]);
+        minheapify(minheap, smallest);
+    }
+}
+
+int issizeone(struct minheap* minheap)
+{
+    return (minheap->size == 1);
+}
+
+struct minheapnode* extractmin(struct minheap* minheap)
+{
+
+    struct minheapnode* temp = minheap->array[0];
+    minheap->array[0] = minheap->array[minheap->size -1];
+    --minheap->size;
+    minheapify(minheap,0);
+    return temp;
+};
+void insertminheap(struct minheap* minheap, struct minheapnode* minheapnode)
+{
+
+    ++minheap->size;
+    int i = minheap->size -1;
+    while(i && minheapnode->freq < minheap->array[(i-1)/2]->freq)
+    {
+        minheap->array[i] = minheap->array[(i-1)/2];
+        i = (i-1)/2;
+    }
+    minheap->array[i] = minheapnode;
+
+}
+
+void buildminheap(struct minheap* minheap)
+{
+    int n = minheap->size -1;
+    int i;
+    for(i = (n-1)/2; i>=0; --i)
+        minheapify(minheap,i);
+
+}
+
+void printarr(int arr[], int n)
+{
+
+    //int n;
+    for(int i=0; i<n; i++)
+        cout<<arr[i];
+    cout<<"\n";
+}
+
+int isleaf(struct minheapnode* root)
+{
+    return !(root->left)&& !(root->right);
+}
+
+struct minheap* createandbuildminheap(char data[],int freq[],int size)
+{
+    struct minheap* minheap = createminheap(size);
+    for(int i=0; i<size; i++)
+        minheap->array[i] = newnode(data[i],freq[i]);
+    minheap->size = size;
+    buildminheap(minheap);
+    return minheap;
+};
+struct minheapnode* buildhuffmantree(char data[], int freq[], int size)
+{
+    struct minheapnode* left, *right, *top;
+    struct minheap* minheap = createandbuildminheap(data, freq, size);
+    while(!issizeone(minheap))
+    {
+        left = extractmin(minheap);
+        right = extractmin(minheap);
+        top = newnode('$', left->freq + right->freq);
+        top->left = left;
+        top->right = right;
+        insertminheap(minheap, top);
+    }
+    return extractmin(minheap);
+};
+
+void printcodes(struct minheapnode* root, int arr[], int top)
+{
+
+    if(root->left){
+        arr[top] =0;
+        printcodes(root->left, arr, top +1);
+    }
+    if(root->right)
+    {
+        arr[top]=1;
+        printcodes(root->right, arr,top+1);
+    }
+    if(isleaf(root))
+    {
+        cout<<root->data<<": ";
+        printarr(arr, top);
+    }
+}
+
+void huffmancodes(char data[], int freq[], int size)
+{
+    struct minheapnode* root = buildhuffmantree(data, freq, size);
+    int arr[max_tree_ht],top =0;
+    printcodes(root,arr,top);
+
+}
+
+int main()
+{
+    char arr[] = { 'a', 'b', 'c', 'd', 'e', 'f' };
+    int freq[] = { 5, 9, 12, 13, 16, 45 };
+
+    int size = sizeof(arr) / sizeof(arr[0]);
+
+    huffmancodes(arr, freq, size);
+    return 0;
+}
